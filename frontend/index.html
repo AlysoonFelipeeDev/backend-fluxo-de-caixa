@@ -1,0 +1,586 @@
+<!DOCTYPE html>
+<html lang="pt-BR">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <link rel="manifest" href="manifest.json">
+    <meta name="theme-color" content="#2563eb">
+
+    <title>Gestão de Serviços - Tio</title>
+    <style>
+        /* --- ESTILO (CSS) --- */
+        :root {
+            --primary: #2563eb;
+            --success: #16a34a;
+            --danger: #dc2626;
+            --bg: #f3f4f6;
+            --card: #ffffff;
+        }
+
+        body {
+            font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, sans-serif;
+            background-color: var(--bg);
+            margin: 0;
+            padding: 20px;
+            color: #1f2937;
+        }
+
+        .container {
+            max-width: 600px;
+            margin: 0 auto;
+        }
+
+        /* Cartão de Saldo */
+        .balance-card {
+            background: var(--primary);
+            color: white;
+            padding: 20px;
+            border-radius: 16px;
+            text-align: center;
+            box-shadow: 0 4px 6px -1px rgba(0, 0, 0, 0.1);
+            margin-bottom: 20px;
+        }
+
+        .balance-title { font-size: 0.9rem; opacity: 0.9; }
+        .balance-value { font-size: 2.5rem; font-weight: bold; margin: 10px 0; }
+        
+        .summary-row {
+            display: flex;
+            justify-content: space-around;
+            margin-top: 15px;
+            background: rgba(255,255,255,0.1);
+            padding: 10px;
+            border-radius: 8px;
+        }
+
+        /* Formulário de Adicionar */
+        .form-card {
+            background: var(--card);
+            padding: 20px;
+            border-radius: 12px;
+            box-shadow: 0 1px 3px rgba(0,0,0,0.1);
+            margin-bottom: 20px;
+        }
+
+        h2 { margin-top: 0; font-size: 1.2rem; }
+
+        input, select {
+            width: 100%;
+            padding: 12px;
+            margin-bottom: 10px;
+            border: 1px solid #d1d5db;
+            border-radius: 8px;
+            box-sizing: border-box;
+            font-size: 16px; /* Evita zoom no iPhone */
+        }
+
+        button.add-btn {
+            width: 100%;
+            padding: 15px;
+            background-color: var(--primary);
+            color: white;
+            border: none;
+            border-radius: 8px;
+            font-size: 1rem;
+            font-weight: bold;
+            cursor: pointer;
+        }
+
+        /* Filtros */
+        .filters {
+            display: flex;
+            gap: 10px;
+            margin-bottom: 15px;
+            overflow-x: auto;
+            padding-bottom: 5px;
+        }
+
+        .filter-btn {
+            background: #e5e7eb;
+            border: none;
+            padding: 8px 16px;
+            border-radius: 20px;
+            white-space: nowrap;
+            cursor: pointer;
+        }
+
+        .filter-btn.active {
+            background: var(--primary);
+            color: white;
+        }
+
+        /* Lista de Transações */
+        .transaction-list {
+            list-style: none;
+            padding: 0;
+        }
+
+        .transaction-item {
+            background: var(--card);
+            padding: 15px;
+            margin-bottom: 10px;
+            border-radius: 10px;
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            border-left: 5px solid transparent;
+            box-shadow: 0 1px 2px rgba(0,0,0,0.05);
+        }
+
+        .item-info h4 { margin: 0 0 5px 0; }
+        .item-info p { margin: 0; font-size: 0.8rem; color: #6b7280; }
+        
+        .entrada { border-left-color: var(--success); }
+        .saida { border-left-color: var(--danger); }
+        
+        .valor-entrada { color: var(--success); font-weight: bold; }
+        .valor-saida { color: var(--danger); font-weight: bold; }
+
+        .btn-delete {
+            background: transparent;
+            border: none;
+            color: #9ca3af;
+            font-size: 1.2rem;
+            margin-left: 10px;
+            cursor: pointer;
+        }
+
+        .valor-entrada::before {
+  content: "+ ";
+}
+.valor-saida::before {
+  content: "- ";
+}
+
+
+    </style>
+</head>
+<body>
+<div id="login" class="container">
+  <div class="form-card">
+    <h2>Login</h2>
+    <input type="email" id="loginEmail" placeholder="Email">
+    <input type="password" id="loginSenha" placeholder="Senha">
+    <button class="add-btn" onclick="login()">Entrar</button>
+
+    <p style="text-align:center; margin-top:10px;">
+  Não tem conta?
+  <a href="#" onclick="mostrarCadastro()">Criar conta</a>
+</p>
+  </div>
+</div>
+
+<div id="cadastro" class="container" style="display:none">
+  <div class="form-card">
+    <h2>Criar Conta</h2>
+    <input type="text" id="cadastroNome" placeholder="Nome">
+    <input type="email" id="cadastroEmail" placeholder="Email">
+    <input type="password" id="cadastroSenha" placeholder="Senha">
+    <button class="add-btn" onclick="cadastrar()">Cadastrar</button>
+
+    <p style="text-align:center; margin-top:10px;">
+      <a href="#" onclick="voltarLogin()">Voltar para login</a>
+    </p>
+  </div>
+</div>
+
+
+<div id="app" style="display:none">
+    <div class="container">
+        <button onclick="logout()" style="float:right; background-color: #fff; padding: 5px">Sair</button>
+        
+        
+        <div class="balance-card">
+            <div class="balance-title" id="mesAtual"></div>
+            <div class="balance-title">Lucro Líquido</div>
+        <div class="balance-value" id="saldoDisplay">R$ 0,00</div>
+        <div class="summary-row">
+            <div>
+                <small>Entradas</small><br>
+                <span id="incomeDisplay">R$ 0,00</span>
+            </div>
+            <div>
+                <small>Gastos</small><br>
+                <span id="expenseDisplay">R$ 0,00</span>
+            </div>
+        </div>
+    </div>
+
+    <div class="form-card">
+        <h2>Novo Lançamento</h2>
+        <select id="tipo">
+            <option value="entrada">💰 Valor Recebido (Serviço)</option>
+            <option value="saida_material">🧱 Gasto com Material</option>
+            <option value="saida_funcionario">👷 Pago p/ Funcionário</option>
+            <option value="saida_outros">📉 Outras Despesas</option>
+        </select>
+        <input type="text" id="desc" placeholder="Descrição (Ex: Ar Condicionado Sr. João)">
+        <input type="number" id="valor" placeholder="Valor (R$)" step="0.01">
+        <input type="date" id="data">
+        <button class="add-btn" onclick="adicionarTransacao()">Salvar Lançamento</button>
+    </div>
+    <div style="margin-bottom: 12px;">
+  <input
+    type="month"
+    id="filtroMes"
+    onchange="filtrarPorMesSelecionado()"
+  />
+</div>
+
+    <div class="filters">
+        <button class="filter-btn active" onclick="filtrar('todos', this)">Tudo</button>
+        <button class="filter-btn" onclick="filtrar('mes', this)">Este Mês</button>
+        <button class="filter-btn" onclick="filtrar('semana', this)">Esta Semana</button>
+        <button class="filter-btn" onclick="filtrar('dia', this)">Hoje</button>
+    </div>
+
+    <ul class="transaction-list" id="lista">
+        </ul>
+
+</div>
+
+<script>
+    /* --- LÓGICA (JAVASCRIPT) --- */
+// Estado da aplicação
+    let transacoes = [];
+    let filtroAtual = 'todos';
+    let modoExtratoGeral = false;
+
+let mesAtivo = {
+  ano: new Date().getFullYear(),
+  mes: new Date().getMonth() + 1
+};
+
+function filtrarPorMesSelecionado() {
+  const valor = document.getElementById("filtroMes").value;
+  if (!valor) return;
+
+  const [ano, mes] = valor.split("-").map(Number);
+
+  mesAtivo = { ano, mes };
+  modoExtratoGeral = false;
+
+  // desmarca o botão "Tudo"
+  document.querySelectorAll('.filter-btn')
+    .forEach(b => b.classList.remove('active'));
+
+  atualizarInterface();
+}
+
+
+function textoMesAtivo() {
+  if (modoExtratoGeral) {
+    return "Extrato geral (todos os meses)";
+  }
+
+  const d = new Date(mesAtivo.ano, mesAtivo.mes - 1);
+  return d.toLocaleDateString("pt-BR", {
+    month: "long",
+    year: "numeric"
+  });
+}
+
+
+
+    const API_URL = "http://localhost:3000";
+    let token = localStorage.getItem("token");
+    if (token) {
+    document.getElementById("login").style.display = "none";
+    document.getElementById("app").style.display = "block";
+    setarDataHoje();
+    carregarTransacoes();
+    }
+    function mostrarCadastro() {
+  document.getElementById("login").style.display = "none";
+  document.getElementById("cadastro").style.display = "block";
+}
+
+function voltarLogin() {
+  document.getElementById("cadastro").style.display = "none";
+  document.getElementById("login").style.display = "block";
+}
+
+
+    function logout() {
+  localStorage.removeItem("token");
+  location.reload();
+}
+
+async function cadastrar() {
+  const nome = document.getElementById("cadastroNome").value;
+  const email = document.getElementById("cadastroEmail").value;
+  const senha = document.getElementById("cadastroSenha").value;
+
+  const res = await fetch(`${API_URL}/auth/register`, {
+    method: "POST",
+    headers: { "Content-Type": "application/json" },
+    body: JSON.stringify({ nome, email, senha })
+  });
+
+  if (!res.ok) {
+    alert("Erro ao cadastrar");
+    return;
+  }
+
+  alert("Conta criada! Faça login.");
+  voltarLogin();
+}
+
+const saldoGeral = calcularSaldoMes(transacoes);
+
+    function nomeMesAtual() {
+  const hoje = new Date();
+  return hoje.toLocaleDateString("pt-BR", { month: "long", year: "numeric" });
+}
+
+    function setarDataHoje() {
+  const inputData = document.getElementById("data");
+  if (inputData) {
+    inputData.valueAsDate = new Date();
+  }
+}
+
+function mesmaData(data1, data2) {
+  return (
+    data1.getDate() === data2.getDate() &&
+    data1.getMonth() === data2.getMonth() &&
+    data1.getFullYear() === data2.getFullYear()
+  );
+}
+
+    async function login() {
+  const email = document.getElementById("loginEmail").value;
+  const senha = document.getElementById("loginSenha").value;
+
+  const res = await fetch(`${API_URL}/auth/login`, {
+    method: "POST",
+    headers: { "Content-Type": "application/json" },
+    body: JSON.stringify({ email, senha })
+  });
+
+  if (!res.ok) {
+    alert("Login inválido");
+    return;
+  }
+
+  const data = await res.json();
+  token = data.token;
+  localStorage.setItem("token", token);
+
+  document.getElementById("login").style.display = "none";
+  document.getElementById("app").style.display = "block";
+
+  carregarTransacoes();
+}
+async function carregarTransacoes() {
+  const res = await fetch(`${API_URL}/transacoes`, {
+    headers: {
+      Authorization: `Bearer ${token}`
+    }
+  });
+
+  transacoes = await res.json();
+  atualizarInterface();
+}
+function calcularSaldoMes(lista) {
+  return lista.reduce((total, t) => {
+    return t.tipo === "entrada"
+      ? total + t.valor
+      : total - t.valor;
+  }, 0);
+}
+
+
+    // Configura a data de hoje no input ao abrir
+    document.getElementById('data').valueAsDate = new Date();
+
+    
+
+    // Função para salvar e atualizar a tela
+   function atualizarInterface() {
+  const listaEl = document.getElementById('lista');
+  const saldoEl = document.getElementById('saldoDisplay');
+  const incomeEl = document.getElementById('incomeDisplay');
+  const expenseEl = document.getElementById('expenseDisplay');
+
+  listaEl.innerHTML = "";
+
+  // 1️⃣ Filtrar pelo mês ativo
+let listaBase = modoExtratoGeral
+  ? [...transacoes]
+  : transacoes.filter(t => {
+      const d = new Date(t.data);
+      return (
+        d.getFullYear() === mesAtivo.ano &&
+        d.getMonth() + 1 === mesAtivo.mes
+      );
+    });
+
+
+
+  // 2️⃣ Filtros secundários (dia / semana)
+  const hoje = new Date();
+
+  if (filtroAtual === "dia") {
+    listaBase = listaBase.filter(t =>
+      mesmaData(new Date(t.data), hoje)
+    );
+  }
+
+  if (filtroAtual === "semana") {
+    const inicio = new Date(hoje);
+    inicio.setDate(hoje.getDate() - hoje.getDay());
+
+    const fim = new Date(inicio);
+    fim.setDate(inicio.getDate() + 6);
+
+    listaBase = listaBase.filter(t => {
+      const d = new Date(t.data);
+      return d >= inicio && d <= fim;
+    });
+  }
+
+  // 3️⃣ Ordenar
+  listaBase.sort((a, b) => new Date(b.data) - new Date(a.data));
+
+  // 4️⃣ Totais
+  let totalReceitas = 0;
+  let totalDespesas = 0;
+
+  listaBase.forEach(t => {
+    const valor = Number(t.valor);
+
+    const li = document.createElement('li');
+    li.className = `transaction-item ${t.tipo === 'entrada' ? 'entrada' : 'saida'}`;
+
+    const sinal = t.tipo === 'entrada' ? '+ ' : '- ';
+
+    const classeValor = t.tipo === 'entrada' ? 'valor-entrada' : 'valor-saida';
+
+    const dataFormatada = new Date(t.data).toLocaleDateString('pt-BR');
+
+    li.innerHTML = `
+      <div class="item-info">
+        <h4>${t.descricao}</h4>
+        <p>${dataFormatada} • ${traduzirTipo(t.tipo)}</p>
+      </div>
+      <div style="display:flex; align-items:center">
+        <span class="${classeValor}"> R$ ${valor.toFixed(2)}</span>
+        <button class="btn-delete" onclick="remover(${t.id})">&times;</button>
+      </div>
+    `;
+
+    listaEl.appendChild(li);
+
+    if (t.tipo === "entrada") totalReceitas += valor;
+    else totalDespesas += valor;
+  });
+
+  // 5️⃣ Atualizar painel
+  saldoEl.innerText = `R$ ${(totalReceitas - totalDespesas).toFixed(2)}`;
+  incomeEl.innerText = `R$ ${totalReceitas.toFixed(2)}`;
+  expenseEl.innerText = `R$ ${totalDespesas.toFixed(2)}`;
+
+  // 6️⃣ Atualizar mês no topo
+  document.getElementById("mesAtual").innerText = textoMesAtivo();
+}
+
+
+    // Adicionar nova transação
+    async function adicionarTransacao() {
+  const desc = document.getElementById('desc').value;
+  const valor = document.getElementById('valor').value;
+  const data = document.getElementById('data').value;
+  const tipo = document.getElementById('tipo').value;
+
+  if (!desc || !valor || !data) {
+    alert("Preencha todos os campos");
+    return;
+  }
+
+  await fetch(`${API_URL}/transacoes`, {
+    method: "POST",
+    headers: {
+      "Content-Type": "application/json",
+      Authorization: `Bearer ${token}`
+    },
+    body: JSON.stringify({ descricao: desc, valor, tipo, data })
+  });
+  document.getElementById("desc").value = "";
+document.getElementById("valor").value = "";
+setarDataHoje();
+document.getElementById("desc").focus();
+
+const d = new Date(data);
+mesAtivo = {
+  ano: d.getFullYear(),
+  mes: d.getMonth() + 1
+};
+
+  carregarTransacoes();
+}
+
+
+    // Remover transação
+    async function remover(id) {
+  if (!confirm("Deseja remover?")) return;
+
+  await fetch(`${API_URL}/transacoes/${id}`, {
+    method: "DELETE",
+    headers: {
+      Authorization: `Bearer ${token}`
+    }
+  });
+
+  carregarTransacoes();
+}
+
+
+    // Mudar Filtro
+function filtrar(tipo, btn) {
+  filtroAtual = tipo;
+
+  document.querySelectorAll('.filter-btn')
+    .forEach(b => b.classList.remove('active'));
+
+  btn.classList.add('active');
+
+  if (tipo === "todos") {
+    modoExtratoGeral = true;
+
+    // limpa o seletor de mês
+    document.getElementById("filtroMes").value = "";
+  } else {
+    modoExtratoGeral = false;
+  }
+
+  atualizarInterface();
+}
+
+
+
+    function traduzirTipo(tipo) {
+        const mapa = {
+            'entrada': 'Receita',
+            'saida_material': 'Material',
+            'saida_funcionario': 'Mão de Obra',
+            'saida_outros': 'Outros'
+        };
+        return mapa[tipo] || tipo;
+    }
+
+    // Inicializar
+    setarDataHoje();
+    atualizarInterface();
+
+    if ("serviceWorker" in navigator) {
+  navigator.serviceWorker.register("service-worker.js")
+    .then(() => console.log("Service Worker registrado"))
+    .catch(err => console.error("Erro SW", err));
+}
+
+
+</script>
+</div>
+</body>
+</html>
