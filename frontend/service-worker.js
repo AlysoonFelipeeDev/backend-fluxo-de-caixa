@@ -1,9 +1,11 @@
-const CACHE_NAME = "financeiro-v1";
+const CACHE_NAME = "fluxo-caixa-v2";
 
 const FILES_TO_CACHE = [
   "./",
   "./index.html",
-  "./manifest.json"
+  "./manifest.json",
+  "./icon-192.png",
+  "./icon-512.png"
 ];
 
 self.addEventListener("install", event => {

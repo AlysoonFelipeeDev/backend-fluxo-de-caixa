@@ -16,6 +16,10 @@ app.use(express.json());
 
 app.use("/auth", authRoutes);
 app.use("/transacoes", transacoesRoutes);
+app.get("/health", (req, res) => {
+  res.status(200).send("ok");
+});
+
 const __filename = fileURLToPath(import.meta.url);
 const __dirname = path.dirname(__filename);
 

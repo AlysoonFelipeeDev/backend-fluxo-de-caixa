@@ -282,7 +282,9 @@ function textoMesAtivo() {
 
 
 
-    const API_URL = "";
+    const API_URL = "https://backend-fluxo-de-caixa.onrender.com";
+    fetch(API_URL + "/health").catch(() => {});
+
     let token = localStorage.getItem("token");
     if (token) {
     document.getElementById("login").style.display = "none";
@@ -373,6 +375,8 @@ function mesmaData(data1, data2) {
   carregarTransacoes();
 }
 async function carregarTransacoes() {
+  document.getElementById("lista").innerHTML = "<p>Carregando...</p>";
+
   const res = await fetch(`${API_URL}/transacoes`, {
     headers: {
       Authorization: `Bearer ${token}`
